@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L.Z.X | Digital Artist</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'void': '#000000',
+                        'off-white': '#f0f0f0',
+                        'accent': '#ff3333',
+                    },
+                    fontFamily: {
+                        'mono': ['"Space Mono"', 'monospace'],
+                        'display': ['"Syncopate"', 'sans-serif'],
+                    },
+                    cursor: {
+                        'none': 'none',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-void text-off-white font-mono overflow-x-hidden md:cursor-none">
+    
+    <!-- Custom Cursor -->
+    <div id="cursor" class="fixed top-0 left-0 w-8 h-8 pointer-events-none z-[20001] hidden md:flex items-center justify-center mix-blend-difference">
+        <div class="absolute inset-0 border border-white rounded-full"></div>
+        <div id="cursor-pupil" class="w-2 h-2 bg-white rounded-full transform transition-transform duration-75"></div>
+    </div>
+    <div id="cursor-follower" class="fixed top-0 left-0 w-12 h-12 border border-off-white rounded-full pointer-events-none z-[20000] mix-blend-difference transition-transform duration-300 hidden md:block opacity-50"></div>
+
+    <!-- Noise Overlay -->
+    <div class="fixed inset-0 pointer-events-none z-50 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+
+    <!-- 3D Background -->
+    <div id="canvas-container" class="fixed top-0 left-0 w-full h-full -z-10 opacity-60"></div>
+
+    <!-- Snake Game Overlay -->
+    <div id="game-overlay" class="fixed inset-0 z-[10000] bg-void/95 hidden flex-col items-center justify-center backdrop-blur-xl">
+        <div class="text-center mb-4">
+            <h2 class="text-4xl font-display text-accent glitch-text" data-text="SNAKE PROTOCOL">SNAKE PROTOCOL</h2>
+            <p class="text-gray-400 mt-2 font-mono">ARROWS TO MOVE | ESC TO EXIT</p>
+            <p class="text-xl mt-2 font-bold">SCORE: <span id="score">0</span></p>
+        </div>
+        <canvas id="gameCanvas" width="400" height="400" class="border-2 border-accent shadow-[0_0_30px_rgba(255,51,51,0.3)]"></canvas>
+        <button id="close-snake" class="mt-6 px-6 py-2 border border-white/20 hover:bg-white text-white hover:text-black rounded-none font-mono transition-colors uppercase tracking-widest md:cursor-none">Exit System</button>
+    </div>
+
+    <!-- Grandma Run Game Overlay -->
+    <div id="dino-game-overlay" class="fixed inset-0 bg-black/95 z-[10000] hidden flex-col items-center justify-center font-mono backdrop-blur-xl">
+        <h2 class="text-4xl text-[#ff00c1] mb-8 glitch-text font-display" data-text="太奶跑酷">太奶跑酷</h2>
+        <div class="relative w-[600px] h-[200px] border-b-2 border-white mb-8 overflow-hidden bg-white/5">
+            <div id="dino-player" class="absolute bottom-0 left-10 w-12 h-12 bg-cover bg-center" style="background-image: url('file:///d:/Users/19344/Downloads/jjjj/%E5%A4%AA%E5%A5%B6.png');"></div>
+            <div id="dino-obstacle" class="absolute bottom-0 right-0 w-8 h-12 bg-red-500"></div>
+            <div id="dino-score" class="absolute top-4 right-4 text-2xl font-bold">0</div>
+        </div>
+        <div class="text-gray-400 text-sm mb-4">空格 / 点击 跳跃</div>
+        <div id="dino-options" class="hidden flex-col gap-4 text-center absolute inset-0 bg-black/90 items-center justify-center z-20">
+            <p class="text-xl text-white mb-4">分数达到 10 - 请选择</p>
+            <div class="flex gap-4">
+                <button id="dino-continue" class="px-6 py-2 border border-white hover:bg-white hover:text-black transition-colors md:cursor-none">继续游戏</button>
+                <button id="dino-grandma" class="px-6 py-2 border border-[#ff00c1] text-[#ff00c1] hover:bg-[#ff00c1] hover:text-white transition-colors md:cursor-none">看太奶</button>
+            </div>
+        </div>
+        <button id="close-dino" class="mt-8 px-6 py-2 border border-gray-600 text-gray-400 hover:text-white transition-colors md:cursor-none">退出</button>
+    </div>
+
+    <!-- Hall of Fame Overlay -->
+    <div id="hall-overlay" class="fixed inset-0 bg-black/95 z-[10000] hidden items-center justify-center p-8 backdrop-blur-xl">
+        <div class="max-w-4xl w-full border border-[#ffd700]/30 bg-black relative p-2 shadow-[0_0_50px_rgba(255,215,0,0.1)]">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#ffd700] to-transparent"></div>
+            <img src="file:///d:/Users/19344/Downloads/jjjj/f56f69bc38b30cd37c4a6a16a50e7d24c1dea463.jpg" class="w-full h-auto max-h-[80vh] object-contain border border-white/10" alt="Hall of Fame">
+            <div class="absolute bottom-8 left-8 bg-black/80 px-4 py-2 border-l-2 border-[#ffd700]">
+                <h3 class="text-[#ffd700] font-display text-xl">HALL OF FAME</h3>
+                <p class="text-gray-400 text-xs font-mono">LEGENDARY STATUS</p>
+            </div>
+            <button id="close-hall" class="absolute top-4 right-4 text-white hover:text-[#ffd700] text-2xl md:cursor-none">&times;</button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-[100] p-8 mix-blend-difference">
+        <div class="flex justify-between items-start">
+            <!-- Easter Egg Trigger -->
+            <div id="logo-trigger" class="text-xl font-bold font-display tracking-widest md:cursor-none select-none hover:text-accent transition-colors relative z-[101]">
+                L.Z.X
+            </div>
+            
+            <div class="hidden md:flex flex-col items-end gap-1 font-mono text-xs tracking-widest">
+                <a href="#" id="btn-gravity" class="hover:line-through decoration-accent decoration-2 md:cursor-none">重力模式</a>
+                <a href="#" id="btn-hall" class="hover:line-through decoration-accent decoration-2 md:cursor-none">名人堂</a>
+                <a href="#" id="btn-dino" class="hover:line-through decoration-accent decoration-2 md:cursor-none">TAINAI RUN</a>
+                <a href="https://github.com/lzx" target="_blank" class="hover:line-through decoration-accent decoration-2 md:cursor-none">开源仓库</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="relative z-10">
+        
+        <!-- Brutalist Hero -->
+        <section class="min-h-screen flex flex-col justify-center px-4 md:px-16 pt-20">
+            <div class="relative mix-blend-difference">
+                <h1 id="hero-title" class="text-[12vw] leading-[0.85] font-display font-bold uppercase tracking-tighter break-words">
+                    LZX<br>
+                    DESIGN<br>
+                    <span class="text-transparent text-stroke-white hover:text-accent hover:text-stroke-none transition-all duration-300">LZX_DFD1_spmk</span>
+                </h1>
+                <div class="mt-8 md:absolute md:bottom-4 md:right-0 max-w-sm text-xs md:text-sm font-mono leading-relaxed text-gray-400">
+                    <p>REDEFINING WEB EXPERIENCES THROUGH CODE AND CHAOS.</p>
+                    <p class="mt-4">BASED IN THE METAVERSE.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gallery Style Work Section -->
+        <section id="work" class="py-24 px-4 md:px-16">
+            <div class="flex items-end justify-between mb-16 border-b border-white/20 pb-4">
+                <span class="font-display text-sm text-gray-500">(01)</span>
+                <h2 class="font-display text-2xl md:text-4xl">SELECTED WORKS</h2>
+            </div>
+
+            <div class="space-y-0">
+                <!-- Project Item 1 -->
+                <div class="project-item gravity-elem group relative border-b border-white/10 py-12 hover:bg-white/5 transition-colors md:cursor-none">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between relative z-10 pointer-events-none">
+                        <h3 class="text-4xl md:text-6xl font-display font-bold group-hover:text-transparent group-hover:text-stroke-white transition-all duration-300">LZX_DFD1_spmk</h3>
+                        <span class="font-mono text-xs text-gray-500 mt-2 md:mt-0">THREE.JS / WEBGL</span>
+                    </div>
+                    <!-- Hover Image Reveal -->
+                    <img src="images/project1.jpg" class="hidden md:block fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-auto h-[60vh] max-w-[80vw] object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-in-out rotate-6 group-hover:rotate-0 z-0 pointer-events-none grayscale group-hover:grayscale-0 scale-[0.98] group-hover:scale-100 blur-[2px] group-hover:blur-0 saturate-50 group-hover:saturate-100" alt="Project Preview">
+                </div>
+
+                <!-- Project Item 2 -->
+                <div class="project-item gravity-elem group relative border-b border-white/10 py-12 hover:bg-white/5 transition-colors md:cursor-none">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between relative z-10 pointer-events-none">
+                        <h3 class="text-4xl md:text-6xl font-display font-bold group-hover:text-transparent group-hover:text-stroke-white transition-all duration-300">LZXuan_O₂pab_lv.MAX</h3>
+                        <span class="font-mono text-xs text-gray-500 mt-2 md:mt-0">REACT / D3</span>
+                    </div>
+                    <img src="images/project2.jpg" class="hidden md:block fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-auto h-[60vh] max-w-[80vw] object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-in-out -rotate-6 group-hover:rotate-0 z-0 pointer-events-none grayscale group-hover:grayscale-0 scale-[0.98] group-hover:scale-100 blur-[2px] group-hover:blur-0 saturate-50 group-hover:saturate-100" alt="Project Preview">
+                </div>
+
+                <!-- Project Item 3 -->
+                <div class="project-item gravity-elem group relative border-b border-white/10 py-12 hover:bg-white/5 transition-colors md:cursor-none">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between relative z-10 pointer-events-none">
+                        <h3 class="text-4xl md:text-6xl font-display font-bold group-hover:text-transparent group-hover:text-stroke-white transition-all duration-300">某个LZXuan</h3>
+                        <span class="font-mono text-xs text-gray-500 mt-2 md:mt-0">OPENAI / NODE</span>
+                    </div>
+                    <img src="images/project3.png" class="hidden md:block fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-auto h-[60vh] max-w-[80vw] object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-in-out rotate-3 group-hover:rotate-0 z-0 pointer-events-none grayscale group-hover:grayscale-0 scale-[0.98] group-hover:scale-100 blur-[2px] group-hover:blur-0 saturate-50 group-hover:saturate-100" alt="Project Preview">
+                </div>
+            </div>
+        </section>
+
+        <!-- Manifesto / About -->
+        <section id="about" class="py-24 px-4 md:px-16 flex flex-col md:flex-row gap-16">
+            <div class="md:w-1/3">
+                <span class="font-display text-sm text-gray-500 border-b border-white/20 pb-4 block mb-8">(02) MANIFESTO</span>
+            </div>
+            <div class="md:w-2/3">
+                <p class="text-2xl md:text-4xl leading-tight font-light text-gray-300">
+                    We live in a world of <span class="text-accent italic">templates</span>. 
+                    I break them. I build immersive digital experiences that challenge the norm.
+                    Functionality is expected; <span class="text-white font-bold">Emotion</span> is the goal.
+                </p>
+                <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 font-mono text-xs text-gray-500 uppercase tracking-widest">
+                    <div>
+                        <span class="block text-white mb-2">Code</span>
+                        React<br>Three.js<br>WebGL<br>Node
+                    </div>
+                    <div>
+                        <span class="block text-white mb-2">Design</span>
+                        Figma<br>Blender<br>Spline<br>Photoshop
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="flex flex-col md:flex-row justify-between items-end gap-6 font-mono text-xs text-gray-500 mix-blend-difference">
+            <div class="flex gap-6">
+                <div class="flex flex-col gap-2">
+                    <span class="text-white">TECH STACK</span>
+                    <a href="https://www.trae.ai/" target="_blank" class="hover:text-[#ff00c1] transition-colors md:cursor-none">Tare (Trae)</a>
+                    <a href="https://space.bilibili.com/3546390319860710?spm_id_from=333.788.upinfo.head.click" target="_blank" class="hover:text-[#ff00c1] transition-colors md:cursor-none">INSPIRATION: JIEJOE</a>
+                </div>
+            </div>
+            <div class="text-right">
+                <p>&copy; 2026 LZX DESIGN. ALL RIGHTS RESERVED.</p>
+                <p class="mt-1 opacity-50">SCROLL TO EXPLORE</p>
+            </div>
+        </footer>
+    </main>
+
+    
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <!-- Background Music -->
+    <audio id="bgm" src="file:///d:/Users/19344/Downloads/jjjj/c.mp3" loop></audio>
+    <script src="script.js"></script>
+</body>
+</html>
